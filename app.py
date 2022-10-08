@@ -14,8 +14,10 @@ from sqlalchemy import exc
 from flask import jsonify
 from elasticsearch import Elasticsearch
 
+# loading environment variables
 load_dotenv()
 
+# adding app configs
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("SQL_URI")
 app.config["CELERY_broker_url"] = os.getenv("REDIS_URL")
@@ -29,14 +31,18 @@ app.config["beat_schedule"] = {
     }
 }
 
+# initilize celery
 celery = Celery(app.name, broker=app.config["CELERY_broker_url"])
 celery.conf.update(app.config)
 
+# init sql db
 db = SQLAlchemy()
 db.init_app(app)
 with app.app_context():
     db.create_all()
 
+
+# init elastic seearch
 ELASTIC_PASSWORD = "LWGNIw4xpSTTNaoFTZqPD7Ah"
 CLOUD_ID = "fampay_assignment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5MDgzZTRiY2IzYzk0ZjgxYWNkMTkyYjE3OWQ4NmUxNCQ5ZTVhMzFmODMzNGM0MTdhOGQwMjExMDljOTI0MmVkOQ=="
 client = Elasticsearch(
@@ -72,6 +78,7 @@ class Video(db.Model):
             'publishTime': self.publishTime
         }
 
+# worker method
 @celery.task()
 def fetch_latest_videos():
     retries = 0
@@ -134,3 +141,6 @@ def search_videos(query):
         print(item)
         videos.append(Video.query.get(item['_source']['id']).to_dict())
     return jsonify(videos)
+
+if __name__ == "__main__":
+    app.run(debug=True)
