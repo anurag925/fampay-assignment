@@ -32,3 +32,22 @@ db = SQLAlchemy()
 db.init_app(app)
 with app.app_context():
     db.create_all()
+
+class Video(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    video_id = db.Column(db.String(64), unique=True, nullable=False)
+    title = db.Column(db.String(255))
+    description = db.Column(db.String(255))
+    publishTime = db.Column(db.DateTime)
+    # created_on = db.Column(db.TIMESTAMP, default=db.func.current_timestamp())
+    # updated_on = db.Column(db.TIMESTAMP, onupdate=db.func.current_timestamp())
+
+    def __init__(self, video_id, title, description, publishTime) -> None:
+        self.video_id = video_id
+        self.title = title
+        self.description = description
+        self.publishTime = publishTime
+
+    def __repr__(self) -> str:
+        return f"Video <video_id = {self.video_id}, title = {self.title}, publishTime = {self.publishTime}>"
+
