@@ -12,6 +12,7 @@ import requests
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
 from flask import jsonify
+from elasticsearch import Elasticsearch
 load_dotenv()
 
 app = Flask(__name__)
@@ -34,6 +35,12 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+ELASTIC_PASSWORD = "LWGNIw4xpSTTNaoFTZqPD7Ah"
+CLOUD_ID = "fampay_assignment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5MDgzZTRiY2IzYzk0ZjgxYWNkMTkyYjE3OWQ4NmUxNCQ5ZTVhMzFmODMzNGM0MTdhOGQwMjExMDljOTI0MmVkOQ=="
+client = Elasticsearch(
+    cloud_id=CLOUD_ID,
+    basic_auth=("elastic", ELASTIC_PASSWORD)
+)
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     video_id = db.Column(db.String(64), unique=True, nullable=False)
