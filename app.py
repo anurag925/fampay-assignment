@@ -13,6 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
 from flask import jsonify
 from elasticsearch import Elasticsearch
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -27,6 +28,7 @@ app.config["beat_schedule"] = {
         'schedule': crontab(minute='*'),
     }
 }
+
 celery = Celery(app.name, broker=app.config["CELERY_broker_url"])
 celery.conf.update(app.config)
 
@@ -41,6 +43,8 @@ client = Elasticsearch(
     cloud_id=CLOUD_ID,
     basic_auth=("elastic", ELASTIC_PASSWORD)
 )
+
+
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     video_id = db.Column(db.String(64), unique=True, nullable=False)
@@ -67,6 +71,7 @@ class Video(db.Model):
             'description': self.description,
             'publishTime': self.publishTime
         }
+
 @celery.task()
 def fetch_latest_videos():
     retries = 0
@@ -111,6 +116,7 @@ def fetch_latest_videos():
                 print(str(video))
                 logging.info(video)
                 db.session.rollback()
+
 
 @app.route("/videos/<int:page_no>", methods=['GET'])
 def fetch_videos(page_no):
