@@ -51,3 +51,47 @@ class Video(db.Model):
     def __repr__(self) -> str:
         return f"Video <video_id = {self.video_id}, title = {self.title}, publishTime = {self.publishTime}>"
 
+@celery.task()
+def fetch_latest_videos():
+    retries = 0
+    # keys = ['AIzaSyC4xcY99GAQneyHRPRtkhSVDNO7U4aruv4']
+    keys = ['AIzaSyC4xcY99GAQneyHRPRtkhSVDNO7U4aruv4',
+            'AIzaSyAPjobf7C6EGppnur0aPhpOR41sB3dR-VU']
+    response = None
+
+    while True:
+        if retries >= len(keys):
+            break
+
+        print(retries)
+        url = f"https://youtube.googleapis.com/youtube/v3/search?key={keys[retries]}&q=cricket&part=snippet&type=video&maxResults=50"
+        response = requests.get(url)
+        print("request ", response.request.path_url, response.text)
+        if response.status_code == 200:
+            break
+
+        retries += 1
+
+    if response.status_code == 403:
+        print("quota has exceeded for all calls")
+        return
+
+    items = json.loads(response.text)["items"]
+    for item in items:
+        video = Video(
+            video_id=item['id']['videoId'],
+            title=item['snippet']['title'],
+            description=item['snippet']['description'],
+            publishTime=datetime.fromisoformat(
+                item['snippet']['publishTime'][:-1] + '+00:00')
+        )
+        with app.app_context():
+            try:
+                db.session.add(video)
+                db.session.commit()
+                res = client.index(index="test-index", document=video.to_dict())
+                print(res)
+            except exc.IntegrityError:
+                print(str(video))
+                logging.info(video)
+                db.session.rollback()
