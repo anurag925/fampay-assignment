@@ -1,7 +1,4 @@
-python3 -m venv venv
-. venv/bin/activate
-pip3 freeze > requirements.txt  
-celery -A app.celery worker
+To Run the application you just need docker installed
 
-flask --app app run
-celery -A app.celery worker --loglevel=info -B
+docker build --tag fampay-assignment .
+docker run -d -p 5001:5001 fampay-assignment

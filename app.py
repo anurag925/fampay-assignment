@@ -45,6 +45,7 @@ with app.app_context():
 # init elastic seearch
 ELASTIC_PASSWORD = "LWGNIw4xpSTTNaoFTZqPD7Ah"
 CLOUD_ID = "fampay_assignment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyQ5MDgzZTRiY2IzYzk0ZjgxYWNkMTkyYjE3OWQ4NmUxNCQ5ZTVhMzFmODMzNGM0MTdhOGQwMjExMDljOTI0MmVkOQ=="
+ELASTIC_INDEX="search-fampay"
 client = Elasticsearch(
     cloud_id=CLOUD_ID,
     basic_auth=("elastic", ELASTIC_PASSWORD)
@@ -57,8 +58,8 @@ class Video(db.Model):
     title = db.Column(db.String(255))
     description = db.Column(db.String(255))
     publishTime = db.Column(db.DateTime)
-    # created_on = db.Column(db.TIMESTAMP, default=db.func.current_timestamp())
-    # updated_on = db.Column(db.TIMESTAMP, onupdate=db.func.current_timestamp())
+    created_on = db.Column(db.TIMESTAMP, default=db.func.current_timestamp())
+    updated_on = db.Column(db.TIMESTAMP, onupdate=db.func.current_timestamp())
 
     def __init__(self, video_id, title, description, publishTime) -> None:
         self.video_id = video_id
@@ -117,7 +118,7 @@ def fetch_latest_videos():
             try:
                 db.session.add(video)
                 db.session.commit()
-                res = client.index(index="test-index", document=video.to_dict())
+                res = client.index(index=ELASTIC_INDEX, document=video.to_dict())
                 print(res)
             except exc.IntegrityError:
                 print(str(video))
@@ -135,7 +136,7 @@ def fetch_videos(page_no):
 
 @app.route("/search/videos/<string:query>", methods=['GET'])
 def search_videos(query):
-    resp = client.search(index="test-index", query={"query_string": { "query": query }})
+    resp = client.search(index=ELASTIC_INDEX, query={"query_string": { "query": query }})
     videos = []
     for item in resp['hits']['hits']:
         print(item)
