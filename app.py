@@ -11,6 +11,7 @@ import requests
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
+from flask import jsonify
 load_dotenv()
 
 app = Flask(__name__)
@@ -51,6 +52,14 @@ class Video(db.Model):
     def __repr__(self) -> str:
         return f"Video <video_id = {self.video_id}, title = {self.title}, publishTime = {self.publishTime}>"
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'video_id': self.video_id,
+            'title': self.title,
+            'description': self.description,
+            'publishTime': self.publishTime
+        }
 @celery.task()
 def fetch_latest_videos():
     retries = 0
@@ -95,3 +104,11 @@ def fetch_latest_videos():
                 print(str(video))
                 logging.info(video)
                 db.session.rollback()
+
+@app.route("/videos/<int:page_no>", methods=['GET'])
+def fetch_videos(page_no):
+    videos = Video.query.order_by(
+        Video.publishTime.desc()).paginate(page=page_no, per_page=10).items
+    print(videos)
+    return jsonify(list(map(lambda x: x.to_dict(), videos)))
+
