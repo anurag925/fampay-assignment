@@ -119,3 +119,12 @@ def fetch_videos(page_no):
     print(videos)
     return jsonify(list(map(lambda x: x.to_dict(), videos)))
 
+
+@app.route("/search/videos/<string:query>", methods=['GET'])
+def search_videos(query):
+    resp = client.search(index="test-index", query={"query_string": { "query": query }})
+    videos = []
+    for item in resp['hits']['hits']:
+        print(item)
+        videos.append(Video.query.get(item['_source']['id']).to_dict())
+    return jsonify(videos)
